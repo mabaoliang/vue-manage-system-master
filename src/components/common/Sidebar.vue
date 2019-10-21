@@ -62,6 +62,11 @@ export default {
                     title: '系统首页'
                 },
                 {
+                    icon: 'el-icon-s-custom',
+                    index: 'user',
+                    title: '用户列表'
+                },
+                {
                     icon: 'el-icon-lx-cascades',
                     index: 'table',
                     title: '活动数据'
@@ -70,6 +75,11 @@ export default {
                     icon: 'el-icon-lx-cascades',
                     index: 'group',
                     title: '群组表格'
+                },
+                {
+                    icon: 'el-icon-s-shop',
+                    index: 'gift',
+                    title: '礼品列表'
                 },
                 {
                     icon: 'el-icon-lx-copy',

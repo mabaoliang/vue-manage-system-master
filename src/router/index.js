@@ -25,6 +25,11 @@ export default new Router({
                 //     meta: { title: '自定义图标' }
                 // },
                 {
+                    path: '/user',
+                    component: () => import(/* webpackChunkName: "table" */ '../components/page/UserTable.vue'),
+                    meta: { title: '用户表格' }
+                },
+                {
                     path: '/table',
                     component: () => import(/* webpackChunkName: "table" */ '../components/page/BaseTable.vue'),
                     meta: { title: '活动表格' }
@@ -33,6 +38,11 @@ export default new Router({
                     path: '/group',
                     component: () => import(/* webpackChunkName: "table" */ '../components/page/GroupTable.vue'),
                     meta: { title: '群组表格' }
+                },
+                {
+                    path: '/gift',
+                    component: () => import(/* webpackChunkName: "table" */ '../components/page/GiftTable.vue'),
+                    meta: { title: '礼品表格' }
                 },
                 {
                     path: '/tabs',
