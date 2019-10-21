@@ -29,18 +29,16 @@
 import axios from 'axios'
 import qs from 'qs'
 
+
 axios.defaults.timeout = 5000;                        //响应时间
 axios.defaults.headers.post['Content-Type'] = 'application/x-www-form-urlencoded;charset=UTF-8';        //配置请求头
 // axios.defaults.headers.post['Content-Type'] = 'multipart/form-data'
 
-axios.defaults.baseURL = 'http://192.168.0.99:8080/api';   //配置接口地址
+axios.defaults.baseURL = 'http://192.168.0.99:8081';   //配置接口地址
 
 //POST传参序列化(添加请求拦截器)
 axios.interceptors.request.use((config) => {
-    //在发送请求之前做某件事
-    // if(config.method  === 'post'){
-    //     config.data = qs.stringify(config.data);
-    // }
+
     return config;
 },(error) =>{
     console.log('错误的传参')
@@ -50,12 +48,17 @@ axios.interceptors.request.use((config) => {
 //返回状态判断(添加响应拦截器)
 axios.interceptors.response.use((res) =>{
     //对响应数据做些事
-    if(!res.data.success){
-        return Promise.resolve(res);
-    }
-    return res;
+ if (res.status === 200) {
+            return Promise.resolve(res);
+
+
+ } else {
+            return Promise.reject(res);
+
+        }
 }, (error) => {
-    console.log('网络异常')
+
+
     return Promise.reject(error);
 });
 
@@ -65,12 +68,21 @@ export function fetchPost(url, params) {
 
         axios.post(url, params)
             .then(response => {
+               // alert(response.data);
                 resolve(response);
+
             }, err => {
+
+                 alert('err')
                 reject(err);
+
             })
             .catch((error) => {
-                reject(error)
+
+                alert('error')
+                alert(error)
+
+
             })
     })
 }
@@ -92,7 +104,6 @@ export function fetchGet(url, param) {
 // post 图片
 
 export  function  fetImgPost(url,param) {
-    console.log(param.get('file'));
     return new Promise((resolve, reject) => {
         axios.post(url, param, {'headers':{'Content-Type': 'multipart/form-data'}})
             .then(response => {

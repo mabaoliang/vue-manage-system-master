@@ -43,8 +43,8 @@
                     <template slot-scope="scope">
                         <el-image
                             class="table-td-thumb"
-                            :src="scope.row.codePhoto"
-                            :preview-src-list="[scope.row.codePhoto]"
+                            :src="url + scope.row.codePhoto"
+                            :preview-src-list="[ url+ scope.row.codePhoto]"
                         ></el-image>
                     </template>
                 </el-table-column>
@@ -121,6 +121,45 @@
             </span>
 
         </el-dialog>
+
+         <!-- 新增弹出框 -->
+        <el-dialog title="新增" :visible.sync="addVisible" width="30%">
+            <el-form ref="form" :model="form" label-width="70px">
+                <el-form-item label="活动名称">
+                    <el-input v-model="form.name"></el-input>
+                </el-form-item>
+                <el-form-item label="状态选择">
+                    <el-select v-model="sel" clearable placeholder="请选择">
+                        <el-option v-for="item in op" :label="item.label" :value="item.value" :key="item.value"></el-option>
+                    </el-select>
+                </el-form-item>
+<!--                <el-form-item label="地址">-->
+<!--                    <el-input v-model="form.address"></el-input>-->
+<!--                </el-form-item>-->
+                 <el-form-item label-width="80px" label="上传图片">
+            　　<!--elementui的上传图片的upload组件-->
+            　　<el-upload
+             　　 class="upload-demo"
+              　　action=""
+                  name="codePhoto"
+              　　:limit=1
+              　　:auto-upload=false
+              　　:on-change="onchange"
+              　　:on-remove="handleRemove"
+              　　:file-list="fileList"
+              　　list-type="picture">
+              　　<el-button size="small" type="primary">点击上传</el-button>
+              　　<!-- <div slot="tip" class="el-upload__tip">只能上传jpg/png文件，且不超过500kb</div> -->
+            　</el-upload>
+          　　</el-form-item>
+            </el-form>
+
+            <span slot="footer" class="dialog-footer">
+                <el-button @click="addVisible = false">取 消</el-button>
+                <el-button type="primary" @click="addLoad">新 增</el-button>
+            </span>
+
+        </el-dialog>
     </div>
 </template>
 
@@ -140,16 +179,18 @@ export default {
             tableData: [],
             multipleSelection: [],
             delList: [],
-            editVisible: false,
+            editVisible: false,   //编辑
+            addVisible:false, //新增
             pageTotal: 0,
+            url: 'http://192.168.0.99:8081',  //图片基地址
             form: {
                 name:''
-            },
-            idx: -1,
-            id: -1,
-            fileList:[],
-            params:new FormData(),
-            sel:0,
+            },  // form 数据
+            idx: -1,  //索引
+            id: -1,  //id
+            fileList:[],  //图片上传前的选取
+            params:null,  //放图片的
+            sel:0,   //状态标记
             op:[{value:0,label:'未开始'},
                 {value:1,label:'已开始'},
                 {value:2,label:'已结束'}
@@ -174,10 +215,53 @@ export default {
             //     this.pageTotal = res.pageTotal || 50;
             // });
         },
-       //新增数据
+
+       //新增
         handleAdd:function(){
 
+            this.addVisible=true
+            this.form.name=''
+            this.sel=0
      },
+        //新增数据
+        addLoad:function(){
+            let that =this;
+
+            let nameA=that.form.name
+            let status=that.sel
+            var re = /^[0-9]+.?[0-9]*$/
+
+            if(nameA.length<1 || !re.test(status) ||  that.params==null || !that.params.get('file'))
+            {
+                alert('请将数据填写完整')
+                return
+            }
+
+            request.fetImgPost('/wx/upload/file' ,that.params).then(function (res) {
+
+                  request.fetchPost('/activity/add',{activityName:nameA,status: status, codePhoto:res.data.message}).then(function (res) {
+
+                      if(res.data.code==1)
+                      {
+                          that.getData()
+                          that.addVisible=false
+                          alert('新增成功')
+                      }else
+                      {
+                          alert('新增失败')
+                      }
+
+                  }).catch(function (err) {
+                      that.getData()
+                    alert('新增失败--')
+                  })
+
+            }).catch(function (err) {
+                  alert(err)
+            })
+
+        },
+
         // 触发搜索按钮
         handleSearch() {
             this.$set(this.query, 'pageIndex', 1);
@@ -186,11 +270,21 @@ export default {
         // 删除操作
         handleDelete(index, row) {
 
+              let that=this;
             request.fetchPost('/activity/delete',{activityId:row.activityId}).then(function (res) {
-                 this.getData()
-                 this.$message.success('删除成功');
+                if(res.data.code==-1)
+                {
+                   alert(res.data.message)
+
+                }else
+                {
+                    that.getData()
+                 alert('删除成功');
+                }
+
             }).catch(function (err) {
-                this.$message.success('删除失败');
+                  //this.getData()
+                alert('删除失败--')
             })
 
         },
@@ -219,10 +313,9 @@ export default {
         },
         //图片改变
         onchange(file,filesList){
-        　　//this.params = new FormData();
+        　　this.params = new FormData();
 
            this.params.append('file', file.raw, file.name);
-           alert(typeof this.params)
       　　},
         //图片删除
       　 handleRemove(file,filesList){
@@ -231,27 +324,61 @@ export default {
       　　},
         // 保存编辑
         saveEdit() {
-            this.editVisible = false;
-            let aid=this.tableData[this.idx].activityId
-            let nameA=this.form.name
-            let status=this.sel
-            // this.params.append('activityId', aid)
-            // this.params.append('activityName',nameA)
-            // this.params.append('status',status)
-            request.fetImgPost('/wx/upload/file' ,this.params).then(function (res) {
-                alert(res.data)
-                console.log(res.data)
+
+            let that=this
+            let aid=that.tableData[that.idx].activityId
+            let nameA=that.form.name
+            let status=that.sel
+            var re = /^[0-9]+.?[0-9]*$/
+
+            if(nameA.length<1 || !re.test(status))
+            {
+                alert('请将数据填写完整')
+                return
+            }
+
+             this.editVisible = false;
+             if (that.params!=null && that.params.get('file'))
+             {
+                 request.fetImgPost('/wx/upload/file' ,that.params).then(function (res) {
+
+                  request.fetchPost('/activity/update',{activityId:aid, activityName:nameA,status: status, codePhoto:res.data.message}).then(function (res) {
+
+                      if (res.data.code==1)
+                      {     that.getData()
+                           alert('修改成功')
+                      }else {
+
+                            alert('修改失败')
+                      }
+
+                  }).catch(function (err) {
+                     // that.getData()
+                    alert('修改失败--')
+                  })
+
             }).catch(function (err) {
-                alert('fail')
+                  alert(err)
             })
 
-            // request.fetImgPost('/activity/update',this.params).then(function (res) {
-            //     console.log(res)
-            // }).catch(function (err) {
-            //     console.log(err)
-            // })
-            // this.$message.success(`修改第 ${this.idx + 1} 行成功`);
-            // this.$set(this.tableData, this.idx, this.form);
+             }else
+             {
+                 request.fetchPost('/activity/update',{activityId:aid, activityName:nameA,status: status, codePhoto:that.dic.codePhoto}).then(function (res) {
+
+                     if(res.data.code==1)
+                     {
+                           that.getData()
+                           alert('修改成功')
+                     }else {
+                            alert('修改失败')
+                     }
+
+                  }).catch(function (err) {
+                    // that.getData()
+                    alert('修改失败--')
+
+                  })
+             }
         },
         // 分页导航
         handlePageChange(val) {
