@@ -16,6 +16,7 @@
             </div>
             <h2>{{$t('i18n.title2')}}</h2>
             <div>
+
                 <i18n path="i18n.info" tag="p">
                     <a place="action" href="https://element.eleme.cn/2.0/#/zh-CN/component/i18n">{{ $t('i18n.value') }}</a>
                 </i18n>
