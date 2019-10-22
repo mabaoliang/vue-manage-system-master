@@ -227,13 +227,13 @@ export default {
         addLoad:function(){
             let that =this;
 
-            let nameA=that.form.name
-            let status=that.sel
-            var re = /^[0-9]+.?[0-9]*$/
+            let nameA=that.form.name;
+            let status=that.sel;
+            var re = /^[0-9]+.?[0-9]*$/;
 
             if(nameA.length<1 || !re.test(status) ||  that.params==null || !that.params.get('file'))
             {
-                alert('请将数据填写完整')
+                alert('请将数据填写完整');
                 return
             }
 

@@ -77,6 +77,11 @@ export default {
                     title: '群组表格'
                 },
                 {
+                    icon: 'el-icon-chat-line-round',
+                    index: 'chat',
+                    title: '聊天记录'
+                },
+                {
                     icon: 'el-icon-s-shop',
                     index: 'gift',
                     title: '礼品列表'

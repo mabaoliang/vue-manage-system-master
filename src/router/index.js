@@ -40,6 +40,11 @@ export default new Router({
                     meta: { title: '群组表格' }
                 },
                 {
+                    path: '/chat',
+                    component: () => import(/* webpackChunkName: "table" */ '../components/page/ChatTable.vue'),
+                    meta: { title: '聊天记录' }
+                },
+                {
                     path: '/gift',
                     component: () => import(/* webpackChunkName: "table" */ '../components/page/GiftTable.vue'),
                     meta: { title: '礼品表格' }

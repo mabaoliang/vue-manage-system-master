@@ -41,13 +41,16 @@
                 <el-table-column label="礼品数量">
                     <template slot-scope="scope">{{scope.row.giftNum}}</template>
                 </el-table-column>
+                <el-table-column label="所属活动">
+                    <template slot-scope="scope">{{scope.row.activityName}}</template>
+                </el-table-column>
                 <el-table-column label="礼品图片" align="center">
                     <template slot-scope="scope">
                         <el-image
                                 class="table-td-thumb"
-                                :src="scope.row.giftImg"
-                                :preview-src-list="[scope.row.giftImg]"
+                                :src="url+scope.row.giftImg"
                         ></el-image>
+                        <!--:preview-src-list="[scope.row.giftImg]"-->
                     </template>
                 </el-table-column>
                 <!--<el-table-column label="状态" align="center">
@@ -87,7 +90,7 @@
 
 
         <!-- 新增弹出框-->
-        <el-dialog title="添加" :visible.sync="addVisible" width="30%">
+        <el-dialog title="添加礼品" :visible.sync="addVisible" width="30%">
             <el-form ref="form" :model="form" label-width="70px">
                 <el-form-item label="礼品名称">
                     <el-input v-model="form.name"></el-input>
@@ -95,12 +98,17 @@
                 <el-form-item label="礼品数量">
                     <el-input v-model="form.num"></el-input>
                 </el-form-item>
+                <el-form-item label="所属活动">
+                    <el-select v-model="sel" clearable placeholder="请选择">
+                        <el-option v-for="item in activity" :label="item.activityName" :value="item.activityId" :key="item.activityId"></el-option>
+                    </el-select>
+                </el-form-item>
                 <el-form-item label-width="80px" label="上传图片">
                     　　<!--elementui的上传图片的upload组件-->
                     　　<el-upload
-                        　　 class="upload-demo"
+                        　　class="upload-demo"
                         　　action=""
-                        name="codePhoto"
+                            name="codePhoto"
                         　　:limit=1
                         　　:auto-upload=false
                         　　:on-change="onchange"
@@ -124,12 +132,20 @@
                 <el-form-item label="礼品名称">
                     <el-input v-model="form.name"></el-input>
                 </el-form-item>
+                <el-form-item label="礼品数量">
+                    <el-input v-model="form.num"></el-input>
+                </el-form-item>
+                <el-form-item label="所属活动">
+                    <el-select v-model="sel" clearable placeholder="请选择">
+                        <el-option v-for="item in activity" :label="item.activityName" :value="item.activityId" :key="item.activityId"></el-option>
+                    </el-select>
+                </el-form-item>
                 <el-form-item label-width="80px" label="上传图片">
                     　　<!--elementui的上传图片的upload组件-->
                     　　<el-upload
-                        　　 class="upload-demo"
+                        　　class="upload-demo"
                         　　action=""
-                        name="codePhoto"
+                            name="codePhoto"
                         　　:limit=1
                         　　:auto-upload=false
                         　　:on-change="onchange"
@@ -149,7 +165,6 @@
 
     </div>
 </template>
-
 <script>
     import { fetchData } from '../../api/index';
     import request from "../../utils/request";
@@ -163,6 +178,7 @@
                     pageIndex: 1,
                     pageSize: 10
                 },
+                url:'http://192.168.0.23:8085',
                 tableData: [],
                 multipleSelection: [],
                 delList: [],
@@ -171,22 +187,25 @@
                 pageTotal: 0,
                 form: {
                     name:'',
-                    num: 0
+                    num: 0,
+                    activityName:''
                 },
                 idx: -1,
                 id: -1,
                 fileList:[],
                 params:null,
-                sel:0,
+                sel: 0,
                 op:[{value:0,label:'默认'},
                     {value:1,label:'不默认'}
                 ],
+                activity:[],
                 img:null,
                 dic:{}  // 一条完整的数据
             };
         },
         created() {
             this.getData();
+            this.getActivity();//查询活动列表
         },
         methods: {
             // 获取 easy-mock 的模拟数据
@@ -205,10 +224,56 @@
             //新增礼品
             handleAdd(){
                 this.addVisible = true;
+                this.name = '';
+                this.sel = -1;
+                this.num = 0
+            },
+            //获取活动
+            getActivity(){
+                let that=this;
+                request.fetchPost('/activity/select').then(function (res) {
+
+                    that.activity=res.data.data[0]['data']
+                }).catch(function (er){
+
+
+                })
             },
             //提交新增礼品
             saveGift(){
+                let that=this;
+                let name1=that.form.name;
+                let aid=that.sel;
+                let number = that.form.num;
+                var re = /^[0-9]+.?[0-9]*$/;
 
+                if(name1.length<1 || !re.test(aid))
+                {
+                    alert('请将数据填写完整');
+                    return
+                }
+                request.fetImgPost('/wx/upload/file' ,that.params).then(function (res) {
+
+                    request.fetchPost('/gift/add',{giftName:name1,giftNum:number,giftImg:res.data.message,activityId:aid}).then(function (res) {
+
+                        if(res.data.code==200)
+                        {
+                            that.getData();
+                            that.addVisible=false;
+                            alert('新增成功')
+                        }else
+                        {
+                            alert('新增失败')
+                        }
+
+                    }).catch(function (err) {
+                        that.getData();
+                        alert('新增失败--')
+                    })
+
+                }).catch(function (err) {
+                    alert(err)
+                })
             },
 
             // 触发搜索按钮
@@ -218,13 +283,22 @@
             },
             // 删除操作
             handleDelete(index, row) {
+                let that=this;
+                request.fetchPost('/gift/delete',{giftId:row.giftId}).then(function (res) {
+                    if(res.data.code==-1)
+                    {
+                        alert(res.data.message)
 
-                request.fetchPost('/gift/delete',{activityId:row.activityId}).then(function (res) {
-                    this.getData()
-                    this.$message.success('删除成功');
+                    }else
+                    {
+                        that.getData()
+                        alert('删除成功');
+                    }
+
                 }).catch(function (err) {
-                    this.$message.success('删除失败');
-                })
+                    //this.getData()
+                    alert('删除失败--')
+                });
 
             },
             // 多选操作
@@ -251,7 +325,9 @@
                 this.idx = index;
                 this.dic = row;
                 this.sel = row.status;
-                this.form.name = row.giftName
+                this.form.name = row.giftName;
+                this.form.num = row.giftNum;
+                this.form.activityName = row.activityName;
                 this.editVisible = true;
             },
 
@@ -259,19 +335,65 @@
             onchange(file,filesList){
                 this.params = new FormData();
                 this.params.append('file', file.raw, file.name);
-                alert('--------------')
+            },
+            //图片删除
+            handleRemove(file,filesList){
+                this.params.delete('file')
             },
             // 保存编辑
             saveEdit() {//update
-                request.fetImgPost('/wx/upload/file' ,this.params).then(function (res) {
-                    //alert(this.params)
-                    console.log("123456789"+res.data)
-                    this.img = res.data
-                    alert(this.img)
-                    //console.log(res.data)
-                }).catch(function (err) {
-                    alert('fail')
-                })
+                let that=this;
+                let gum=that.form.num;
+                let gid=that.tableData[that.idx].giftId;
+                let nameA=that.form.name;
+                let aid=that.sel;
+
+                if(nameA.length<1)
+                {
+                    alert('请将数据填写完整')
+                    return
+                }
+
+                this.editVisible = false;
+                if (that.params!=null && that.params.get('file'))
+                {
+                    request.fetImgPost('/wx/upload/file' ,that.params).then(function (res) {
+
+                        request.fetchPost('/gift/update',{giftId:gid,giftNum:gum,giftName:nameA,activityId:aid,giftImg:res.data.message}).then(function (res) {
+
+                            if (res.data.code==200)
+                            {     that.getData()
+                                alert('修改成功')
+                            }else {
+
+                                alert('修改失败')
+                            }
+
+                        }).catch(function (err) {
+                            // that.getData()
+                            alert('修改失败--')
+                        })
+
+                    }).catch(function (err) {
+                        alert(err)
+                    })
+                }else
+                {
+                    request.fetchPost('/gift/update',{activityId:aid, giftName:nameA,giftId:gid, giftImg:that.dic.giftImg,giftNum:gum}).then(function (res) {
+                        if(res.data.code==200)
+                        {
+                            that.getData()
+                            alert('修改成功')
+                        }else {
+                            alert('修改失败')
+                        }
+
+                    }).catch(function (err) {
+                        // that.getData()
+                        alert('修改失败--')
+
+                    })
+                }
                 // request.fetchPost('/gift/update',{giftId:row.giftId,giftName:this.form.name,giftImg:this.img}).then(function (res) {
                 //     alert("上传成功")
                 // }).catch(function (err) {
