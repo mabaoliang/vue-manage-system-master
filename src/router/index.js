@@ -44,6 +44,26 @@ export default new Router({
                     component: () => import(/* webpackChunkName: "table" */ '../components/page/GiftTable.vue'),
                     meta: { title: '礼品表格' }
                 },
+                 {
+                    path: '/luck',
+                    component: () => import(/* webpackChunkName: "table" */ '../components/page/LuckTable.vue'),
+                    meta: { title: '抽奖设置' }
+                },
+                {
+                    path: '/luckNote',
+                    component: () => import(/* webpackChunkName: "table" */ '../components/page/LuckNoteTable.vue'),
+                    meta: { title: '抽奖设置' }
+                },
+                  {
+                    path: '/vote',
+                    component: () => import(/* webpackChunkName: "table" */ '../components/page/VoteTable.vue'),
+                    meta: { title: '投票表格' }
+                },
+                  {
+                    path: '/voteNote',
+                    component: () => import(/* webpackChunkName: "table" */ '../components/page/VoteNoteTable.vue'),
+                    meta: { title: '投票记录' }
+                },
                 {
                     path: '/tabs',
                     component: () => import(/* webpackChunkName: "tabs" */ '../components/page/Tabs.vue'),

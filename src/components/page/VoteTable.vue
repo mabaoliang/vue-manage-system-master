@@ -1,0 +1,522 @@
+<template>
+    <div>
+        <div class="crumbs">
+            <el-breadcrumb separator="/">
+                <el-breadcrumb-item>
+                    <i class="el-icon-lx-cascades"></i> 活动表格
+                </el-breadcrumb-item>
+            </el-breadcrumb>
+        </div>
+        <div class="container">
+            <div class="handle-box">
+                <el-button
+                    type="primary"
+                    icon="el-icon-delete"
+                    class="handle-del mr10"
+                    @click="delAllSelection"
+                >批量删除</el-button>
+                <el-select v-model="query.address" placeholder="地址" class="handle-select mr10">
+                    <el-option key="1" label="广东省" value="广东省"></el-option>
+                    <el-option key="2" label="湖南省" value="湖南省"></el-option>
+                </el-select>
+                <el-input v-model="query.name" placeholder="用户名" class="handle-input mr10"></el-input>
+                <el-button type="primary" icon="el-icon-search" @click="handleSearch">搜索</el-button>
+                  <el-button type="primary"  @click="handleAdd">新增</el-button>
+            </div>
+            <el-table
+                :data="tableData"
+                border
+                class="table"
+                ref="multipleTable"
+                header-cell-class-name="table-header"
+                @selection-change="handleSelectionChange"
+            >
+                <el-table-column type="selection" width="55" align="center"></el-table-column>
+                <el-table-column prop="id" label="ID" width="55" align="center">
+                    <template slot-scope="scope">{{scope.row.activityId}}</template>
+                </el-table-column>
+<!--                <el-table-column prop="name" label="用户名"></el-table-column>-->
+                <el-table-column label="投票标题">
+                    <template slot-scope="scope">{{scope.row.voteTitle}}</template>
+                </el-table-column>
+                <el-table-column label="组名称">
+                    <template slot-scope="scope">{{scope.row.groupName}}</template>
+                </el-table-column>
+                <el-table-column label="所属活动" align="center">
+                    <template slot-scope="scope">{{scope.row.activityName}}</template>
+                </el-table-column>
+                <el-table-column label="属否多选" align="center">
+                    <template slot-scope="scope">
+                        <el-tag
+                            :type="scope.row.voteIs===false?'单选':'多选'"
+                        >{{scope.row.voteIs===false?'单选':'多选'}}</el-tag>
+                    </template>
+                </el-table-column>
+                <el-table-column label="操作" width="240" align="center">
+                    <template slot-scope="scope">
+                         <el-button
+                            type="text"
+                            icon="el-icon-s-claim"
+                            @click="optionsAdd(scope.$index, scope.row)"
+                        >选项添加</el-button>
+                        <el-button
+                            type="text"
+                            icon="el-icon-edit"
+                            @click="handleEdit(scope.$index, scope.row)"
+                        >编辑</el-button>
+                        <el-button
+                            type="text"
+                            icon="el-icon-delete"
+                            class="red"
+                            @click="handleDelete(scope.$index, scope.row)"
+                        >删除</el-button>
+
+                    </template>
+                </el-table-column>
+            </el-table>
+            <div class="pagination">
+                <el-pagination
+                    background
+                    layout="total, prev, pager, next"
+                    :current-page="query.pageIndex"
+                    :page-size="query.pageSize"
+                    :total="pageTotal"
+                    @current-change="handlePageChange"
+                ></el-pagination>
+            </div>
+        </div>
+
+        <!-- 编辑弹出框 -->
+        <el-dialog title="编辑" :visible.sync="editVisible" width="30%">
+            <el-form ref="form" :model="form" label-width="70px">
+                <el-form-item label="群组名称">
+                    <el-input v-model="form.name"></el-input>
+                </el-form-item>
+                <el-form-item>
+                      <el-radio  v-model="radio" label='false'>单选</el-radio>
+                     <el-radio  v-model="radio" label='true'>多选</el-radio>
+                </el-form-item>
+                <el-form-item label="所属活动">
+                    <el-select @change="selectWayA"   v-model="sel" clearable placeholder="请选择">
+                        <el-option v-for="item in op" :label="item.activityName" :value="item.activityId" :key="item.activityId"></el-option>
+                    </el-select>
+                </el-form-item>
+                  <el-form-item label="所属群组">
+                    <el-select v-model="grl" clearable placeholder="请选择">
+                        <el-option v-for="item in group" :label="item.groupName" :value="item.groupId" :key="item.groupId"></el-option>
+                    </el-select>
+                </el-form-item>
+            </el-form>
+
+            <span slot="footer" class="dialog-footer">
+                <el-button @click="editVisible = false">取 消</el-button>
+                <el-button type="primary" @click="saveEdit">确 定</el-button>
+            </span>
+
+        </el-dialog>
+        <!-- 新增弹出框 -->
+        <el-dialog title="新增" :visible.sync="addVisible" width="30%">
+            <el-form ref="form" :model="form" label-width="70px">
+                <el-form-item label="群组名称">
+                    <el-input v-model="form.name"></el-input>
+                </el-form-item>
+                <el-form-item>
+                      <el-radio  v-model="radio" label='false'>单选</el-radio>
+                     <el-radio  v-model="radio" label='true'>多选</el-radio>
+                </el-form-item>
+                <el-form-item label="所属活动">
+                    <el-select @change="selectWayB"  v-model="sel" clearable placeholder="请选择">
+                        <el-option v-for="item in op" :label="item.activityName" :value="item.activityId" :key="item.activityId"></el-option>
+                    </el-select>
+                </el-form-item>
+                   <el-form-item label="所属群组">
+                    <el-select v-model="grl" clearable placeholder="请选择">
+                        <el-option v-for="item in group" :label="item.groupName" :value="item.groupId" :key="item.groupId"></el-option>
+                    </el-select>
+                </el-form-item>
+            </el-form>
+
+            <span slot="footer" class="dialog-footer">
+                <el-button @click="addVisible = false">取 消</el-button>
+                <el-button type="primary" @click="addLoad">新 增</el-button>
+            </span>
+
+        </el-dialog>
+         <!--        //子项弹框-->
+         <el-dialog title="投票子项" :visible.sync="voteVisible" width="35%">
+             <div class="center" style="width:100%;height: 30px;line-height:30px;text-align: center">投票标题：{{dic.voteTitle}}</div>
+<!--             <el-form inline="true"  class="demo-form-inline">-->
+             <div style="display:flex;justify-content: center;align-items: center" >
+                  选项名称<el-input style="width:40%;padding: 5px;" v-model="zx"></el-input><el-button @click="optionAdd" >{{opIf==false?'新增':'修改'}}</el-button>
+             </div>
+
+<!--             </el-form>-->
+              <el-table
+                :data="optionsList"
+                border
+                class="table"
+                header-cell-class-name="table-header"
+                @selection-change="handleSelectionChange"
+            style="margin: 20px 0px" >
+<!--                <el-table-column type="selection" width="55" align="center"></el-table-column>-->
+                <el-table-column prop="id" label="ID" width="55" align="center">
+                    <template slot-scope="scope">{{scope.row.optionsId}}</template>
+                </el-table-column>
+<!--                <el-table-column prop="name" label="用户名"></el-table-column>-->
+                <el-table-column label="选项">
+                    <template slot-scope="scope">{{scope.row.optionsText}}</template>
+                </el-table-column>
+                <el-table-column label="操作" width="180" align="center">
+                    <template slot-scope="scope">
+                        <el-button
+                            type="text"
+                            icon="el-icon-edit"
+                            @click="editionA(scope.$index, scope.row)"
+                        >编辑</el-button>
+                        <el-button
+                            type="text"
+                            icon="el-icon-delete"
+                            class="red"
+                            @click="deleteA(scope.$index, scope.row)"
+                        >删除</el-button>
+                    </template>
+                </el-table-column>
+            </el-table>
+
+        </el-dialog>
+    </div>
+</template>
+
+<script>
+import { fetchData } from '../../api/index';
+import request from "../../utils/request";
+export default {
+    name: 'groupTable',
+    data() {
+        return {
+            query: {
+                address: '',
+                name: '',
+                pageIndex: 1,
+                pageSize: 10
+            },
+            tableData: [],
+            optionsList:[],
+            multipleSelection: [],
+            delList: [],
+            editVisible: false,
+            addVisible:false,
+            voteVisible:false,
+            pageTotal: 0,
+            form: {
+                name:''
+            },
+            zx:'',
+            idx: -1,
+            id: -1,
+            fileList:[],
+            sel:-1,  //活动选择
+            grl:-1,  //组选择
+            radio:'false',
+            op:[],
+            opIf:false,  //是否可修改
+            opId:-1, //选项id
+            group:[],
+            dic:{}  // 一条完整的数据
+        };
+    },
+    created() {
+        this.getData();
+
+    },
+    methods: {
+        // 获取 easy-mock 的模拟数据
+        getData() {
+            request.fetchPost('/vote/select').then((res)=>{
+                this.tableData = res.data.data[0]["data"]
+                console.log(res.data.data)
+            }).catch((err=>{
+                console.log(err)
+            }))
+
+        },
+        //获取活动
+        getActivity(){
+             let that=this
+          request.fetchPost('activity/select').then(function (res) {
+
+              that.op=res.data.data[0]['data']
+          }).catch(function (er){
+
+
+          })
+        },
+        //获取组
+        getGroupData(aid){
+
+               let that=this
+          request.fetchPost('group/selectId',{activityId:aid}).then(function (res) {
+
+              that.group=res.data.data[0]['data']
+
+          }).catch(function (er){
+
+
+          })
+        },
+        // 触发搜索按钮
+        handleSearch() {
+            this.$set(this.query, 'pageIndex', 1);
+            this.getData();
+        },
+        //新增
+        handleAdd(){
+            this.addVisible=true;
+            this.radio='false';
+            this.sel=-1;
+            this.grl=-1;
+            this.form.name='';
+        },
+        // 编辑时的
+        selectWayA(e){
+             this.grl =-1;
+             this.getGroupData(this.sel);
+        },
+        //新增时
+        selectWayB(e){
+                this.grl =-1;
+               this.getGroupData(this.sel);
+        },
+        //  新增数据
+        addLoad(){
+
+            let that=this
+            let nameA=that.form.name
+            let aid=that.sel   //活动id
+            let gid= that.grl   // 组id
+            var re = /^[0-9]+.?[0-9]*$/
+
+            if(nameA.length<1 || !re.test(aid) || !re.test(gid))
+            {
+                alert('请将数据填写完整')
+                return
+            }
+            alert(nameA)
+            alert(aid)
+            alert(gid)
+
+            request.fetchPost('/vote/add',{voteTitle:that.form.name,groupId:gid,activityId:that.sel,voteIs:that.radio=='false'?0:1 }).then(function (res) {
+                if(res.data.code==1){
+                    that.addVisible=false
+                    that.getData()
+                    alert('新增成功')
+                }else{
+
+                    alert('新增失败')
+                }
+            }).catch(function (err) {
+                alert(err)
+            })
+        },
+        // 删除操作
+        handleDelete(index, row) {
+            let that=this;
+            request.fetchPost('/vote/delete',{groupId:row.groupId}).then(function (res) {
+                if(res.data.code==1)
+                {
+                     that.getData()
+                     alert('删除成功')
+                }else {
+                    alert('删除失败')
+                }
+
+            }).catch(function (err) {
+               alert('删除失败')
+            })
+
+        },
+        // 多选操作
+        handleSelectionChange(val) {
+            this.multipleSelection = val;
+        },
+        delAllSelection() {
+            const length = this.multipleSelection.length;
+            let str = '';
+            this.delList = this.delList.concat(this.multipleSelection);
+            for (let i = 0; i < length; i++) {
+                str += this.multipleSelection[i].name + ' ';
+            }
+            this.$message.error(`删除了${str}`);
+            this.multipleSelection = [];
+        },
+        // 编辑操作
+        handleEdit(index, row) {
+
+            this.idx = index;
+            this.dic = row;
+            this.sel = row.activityId;
+            this.grl = row.groupId;
+            this.form.name = row.groupName;
+            this.radio=row.voteIs===false?'false':'true';
+            this.editVisible = true;
+            this.getGroupData(row.activityId);
+        },
+        // 保存编辑
+        saveEdit() {
+
+            let that=this
+            let nameA=that.form.name
+            let aid=that.sel
+            let gid= that.grl
+            var re = /^[0-9]+.?[0-9]*$/
+
+            if(nameA.length<1 || !re.test(aid) || !re.test(gid))
+            {
+                alert('请将数据填写完整')
+                return
+            }
+
+            request.fetchPost('/vote/update',{voteId:that.dic.voteId,voteTitle:that.form.name,activityId:that.sel,groupId:gid,voteIs:that.radio=='false'?0:1 }).then(function (res) {
+                if(res.data.code==1){
+                    that.editVisible=false
+                    that.getData()
+                    alert('修改成功')
+                }else{
+
+                    alert('修改失败')
+                }
+            }).catch(function (err) {
+                alert(err)
+            })
+        },
+        // 分页导航
+        handlePageChange(val) {
+            this.$set(this.query, 'pageIndex', val);
+            this.getData();
+        },
+        //optionsAdd 选项窗口调用
+        optionsAdd(index, row){
+
+            this.dic=row;
+            this.voteVisible=true;
+            this.optionsSelect();
+        },
+
+        //查询选项
+        optionsSelect(){
+            let that =this;
+            request.fetchPost('/vote/options/select',{voteId:that.dic.voteId}).then(function (res) {
+
+                that.optionsList= res.data.data[0]["data"]
+            }).catch(function (rr) {
+               alert(rr)
+            })
+        },
+        //增加字选项
+        optionAdd(){
+
+
+            let that =this;
+            if(that.zx.length<1)
+            {
+                 alert('请输入选项名称')
+                return
+            }
+
+            if(that.opIf==true && that.opId>0){  //修改
+
+                request.fetchPost('vote/options/update',{optionsId: that.opId,optionsText: that.zx}).then(function (res) {
+                 if(res.data.code==1)
+                  {
+                   alert('修改成功')
+                      that.zx='';
+                      that.opId=-1;
+                      that.opIf=false;
+                   that.optionsSelect()
+                  }else {
+                      alert('修改失败')
+                  }
+                }).catch(function (err) {
+                      that.zx='';
+                      that.opId=-1;
+                      that.opIf=false;
+                      alert(err)
+                })
+
+            }else{  //新增
+            request.fetchPost('/vote/options/add',{optionsText:that.zx,voteId:that.dic.voteId}).then(function (res) {
+                if(res.data.code==1)
+                {
+                    that.zx=''
+                    alert('新增成功')
+                    that.optionsSelect()
+                }else{
+                    alert('新增失败')
+                }
+            }).catch(function (err) {
+                alert(err)
+            })
+            }
+        },
+
+    // 选项编辑
+    editionA(index,row){
+
+           this.opId=row.optionsId;
+           this.opIf=true;
+           this.zx=row.optionsText;
+
+    },
+    //选项删除
+    deleteA(index,row){
+
+        let that=this;
+        request.fetchPost('vote/options/delete',{optionsId:row.optionsId}).then(function (res) {
+            if(res.data.code==1)
+            {
+              alert('删除成功')
+               that.optionsSelect()
+            }else {
+                alert('删除失败')
+            }
+        }).catch(function (err) {
+            alert(err)
+        })
+    }
+
+
+    }
+};
+</script>
+
+<style scoped>
+
+.handle-box {
+    margin-bottom: 20px;
+}
+
+.handle-select {
+    width: 120px;
+}
+
+.handle-input {
+    width: 300px;
+    display: inline-block;
+}
+.table {
+    width: 100%;
+    font-size: 14px;
+}
+.red {
+    color: #ff0000;
+}
+.mr10 {
+    margin-right: 10px;
+}
+.table-td-thumb {
+    display: block;
+    margin: auto;
+    width: 40px;
+    height: 40px;
+}
+</style>
