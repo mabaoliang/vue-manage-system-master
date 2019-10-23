@@ -29,7 +29,7 @@
             >
                 <el-table-column type="selection" width="55" align="center"></el-table-column>
                 <el-table-column prop="id" label="ID" width="55" align="center">
-                    <template slot-scope="scope">{{scope.row.activityId}}</template>
+                    <template slot-scope="scope">{{scope.row.chatId}}</template>
                 </el-table-column>
                 <el-table-column label="所属活动">
                     <template slot-scope="scope">{{scope.row.activityName}}</template>
@@ -93,9 +93,9 @@
         methods: {
             // 获取 easy-mock 的模拟数据
             getData(aid) {
-                request.fetchPost('/wechatwall/select',{activityId:aid}).then((res)=>{
+                request.fetchPost('/wechatwall/select',{activityId:aid,page:this.query.pageIndex}).then((res)=>{
                     this.tableData = res.data.data[0]["data"]
-                    this.pageTotal = this.tableData.length;
+                    this.pageTotal = res.data.data[0]["count"]
                     console.log(this.tableData)
                 }).catch((err=>{
                     console.log(err)
@@ -123,6 +123,7 @@
          selectWay(e){
                 if(this.sel>0)
                 {
+                      this.$set(this.query, 'pageIndex', 1);
                       this.getData(this.sel);
                 }
 
@@ -137,7 +138,7 @@
             // 分页导航
             handlePageChange(val) {
                 this.$set(this.query, 'pageIndex', val);
-                this.getData();
+                 this.getData(this.sel);
             }
         }
     };

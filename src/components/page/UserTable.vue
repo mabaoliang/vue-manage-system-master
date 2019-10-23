@@ -257,9 +257,9 @@
         methods: {
             // 获取 easy-mock 的模拟数据
             getData(aid) {
-                request.fetchPost('/user/select',{activityId:aid}).then((res)=>{
+                request.fetchPost('/user/select',{activityId:aid,page:this.query.pageIndex}).then((res)=>{
                     this.tableData = res.data.data[0]["data"];
-                    this.pageTotal = this.tableData.length
+                    this.pageTotal = res.data.data[0]["count"];
                     console.log(this.tableData)
                 }).catch((err=>{
                     console.log(err)
@@ -329,7 +329,8 @@
 
                         if(res.data.code==200)
                         {
-                            that.getData();
+                            that.$set(that.query, 'pageIndex', 1);
+                            that.getData(that.acId);
                             that.addVisible=false;
                             alert('新增成功')
                         }else
@@ -338,7 +339,7 @@
                         }
 
                     }).catch(function (err) {
-                        that.getData();
+
                         alert('新增失败--')
                     })
 
@@ -351,7 +352,7 @@
             //活动选择的时候
          selectWay(e){
                 if(this.acId>0)
-                {
+                {     this.$set(this.query, 'pageIndex', 1);
                       this.getData(this.acId);
                 }
 
@@ -359,12 +360,12 @@
 
              // 编辑时的
         selectWayA(e){
-             this.grl =-1;
+             this.gel =-1;
              this.getGroup(this.sel);
         },
         //新增时
         selectWayB(e){
-                this.grl =-1;
+                this.gel =-1;
                this.getGroup(this.sel);
         },
             // 触发搜索按钮
@@ -377,7 +378,8 @@
                 let that=this;
                 request.fetchPost('/user/delete',{userId:row.userId}).then(function (res) {
                     if(res.data.code==200){
-                        that.getData()
+                        that.$set(that.query, 'pageIndex', 1);
+                        that.getData(that.acId)
                         alert('删除成功');
                     }else{
                         alert(res.data.message)
@@ -406,6 +408,8 @@
             handleEdit(index, row) {
                 this.idx = index;
                 this.dic = row;
+                this.sel = row.activityId;
+                this.gel = row.groupId;
                 this.form.userNiceName = row.userNiceName;
                 this.form.name = row.userName;
                 this.form.phone = row.userTel;
@@ -431,7 +435,9 @@
                     request.fetImgPost('/wx/upload/file' ,that.params).then(function (res) {
                         request.fetchPost('/user/update',{userId:uid,userName:uname,userNiceName:nickname,userPhoto:res.data.message,userAddress:address,userTel:tel,activityId:aid,groupId:gid}).then(function (res) {
                             if (res.data.code==200)
-                            {     that.getData()
+                            {
+                                that.$set(that.query, 'pageIndex', 1);
+                                that.getData(that.acId)
                                 alert('修改成功')
                             }else {
                                 alert('修改失败')
@@ -445,7 +451,8 @@
                 }else {
                     request.fetchPost('/user/update',{userId:uid,userName:uname,userNiceName:nickname,userPhoto:that.dic.userPhoto,userAddress:address,userTel:tel,activityId:aid,groupId:gid}).then(function (res) {
                         if(res.data.code==200){
-                            that.getData()
+                            that.$set(that.query, 'pageIndex', 1);
+                            that.getData(that.acId)
                             alert('修改成功')
                         }else {
                             alert('修改失败')
@@ -461,7 +468,7 @@
             // 分页导航
             handlePageChange(val) {
                 this.$set(this.query, 'pageIndex', val);
-                this.getData();
+                this.getData(this.acId);
             }
         }
     };

@@ -32,7 +32,7 @@
             >
                 <el-table-column type="selection" width="55" align="center"></el-table-column>
                 <el-table-column prop="id" label="ID" width="55" align="center">
-                    <template slot-scope="scope">{{scope.row.activityId}}</template>
+                    <template slot-scope="scope">{{scope.row.groupId}}</template>
                 </el-table-column>
 <!--                <el-table-column prop="name" label="用户名"></el-table-column>-->
                 <el-table-column label="组名称">
@@ -165,9 +165,9 @@ export default {
     methods: {
         // 获取 easy-mock 的模拟数据
         getData(aid) {
-            request.fetchPost('/group/select',{activityId:aid}).then((res)=>{
+            request.fetchPost('/group/select',{activityId:aid,page:this.query.pageIndex}).then((res)=>{
                 this.tableData = res.data.data[0]["data"]
-                this.pageTotal = this.tableData.length
+                this.pageTotal = res.data.data[0]["count"]
                 console.log(res.data)
             }).catch((err=>{
                 console.log(err)
@@ -196,7 +196,8 @@ export default {
          selectWay(e){
                 if(this.acId>0)
                 {
-                      this.getData(this.acId);
+                    this.$set(this.query, 'pageIndex', 1);
+                    this.getData(this.acId);
                 }
 
          },
@@ -228,8 +229,9 @@ export default {
 
             request.fetchPost('/group/add',{groupName:that.form.name,activityId:that.sel,isDefault:that.radio=='false'?0:1 }).then(function (res) {
                 if(res.data.code==1){
+                    that.$set(that.query, 'pageIndex', 1);
                     that.addVisible=false
-                    that.getData()
+                    that.getData(that.acId)
                     alert('新增成功')
                 }else{
 
@@ -245,7 +247,8 @@ export default {
             request.fetchPost('/group/delete',{groupId:row.groupId}).then(function (res) {
                 if(res.data.code==1)
                 {
-                     that.getData()
+                    that.$set(that.query, 'pageIndex', 1);
+                     that.getData(that.acId)
                      alert('删除成功')
                 }else {
                     alert('删除失败')
@@ -297,7 +300,8 @@ export default {
             request.fetchPost('/group/update',{groupId:that.dic.groupId,groupName:that.form.name,activityId:that.sel,isDefault:that.radio=='false'?0:1 }).then(function (res) {
                 if(res.data.code==1){
                     that.editVisible=false
-                    that.getData()
+                    that.$set(that.query, 'pageIndex', 1);
+                    that.getData(that.acId)
                     alert('修改成功')
                 }else{
 
@@ -310,7 +314,7 @@ export default {
         // 分页导航
         handlePageChange(val) {
             this.$set(this.query, 'pageIndex', val);
-            this.getData();
+            this.getData(this.acId);
         }
     }
 };

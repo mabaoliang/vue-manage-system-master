@@ -15,9 +15,8 @@
                     class="handle-del mr10"
                     @click="delAllSelection"
                 >批量删除</el-button>
-                <el-select v-model="query.address" placeholder="地址" class="handle-select mr10">
-                    <el-option key="1" label="广东省" value="广东省"></el-option>
-                    <el-option key="2" label="湖南省" value="湖南省"></el-option>
+                 <el-select    @change="selectWay" v-model="acId" clearable placeholder='活动' class="handle-select mr10">
+                        <el-option v-for="item in acArr" :label="item.activityName" :value="item.activityId" :key="item.activityId"></el-option>
                 </el-select>
                 <el-input v-model="query.name" placeholder="用户名" class="handle-input mr10"></el-input>
                 <el-button type="primary" icon="el-icon-search" @click="handleSearch">搜索</el-button>
@@ -165,41 +164,60 @@ export default {
             sel:-1,  //活动选择
             radio:'0',
             op:[],
-            dic:{}  // 一条完整的数据
+            dic:{},  // 一条完整的数据
+            acId:-1, //下拉查询 活动ID
+            acArr:[]  //活动下拉 查询数组
         };
     },
     created() {
-        this.getData();
+       // this.getData();
         this.getActivity();
 
     },
     methods: {
         // 获取 easy-mock 的模拟数据
         getData() {
-            request.fetchPost('/luck/select').then((res)=>{
+            request.fetchPost('/luck/select',{activityId:this.acId,page:this.query.pageIndex}).then((res)=>{
                 this.tableData = res.data.data[0]["data"]
+                this.pageTotal = res.data.data[0]["count"]
                 console.log(res.data.data)
             }).catch((err=>{
                 console.log(err)
             }))
 
         },
-        //获取活动
-        getActivity(){
+       //获取活动
+          getActivity(){
              let that=this
-          request.fetchPost('activity/select').then(function (res) {
+             request.fetchPost('activity/select').then(function (res) {
 
-              that.op=res.data.data[0]['data']
+                  that.op=res.data.data[0]['data']
+                  that.acArr=res.data.data[0]['data']
+               if(that.acArr.length>0)
+               {
+                   that.acId= that.acArr[0].activityId;
+                   that.getData(that.acId)
+               }
+
           }).catch(function (er){
 
 
           })
-        },
-        // 触发搜索按钮
-        handleSearch() {
-            this.$set(this.query, 'pageIndex', 1);
-            this.getData();
-        },
+         },
+            //活动选择的时候
+         selectWay(e){
+                if(this.acId>0)
+                {
+                    this.$set(this.query, 'pageIndex', 1);
+                    this.getData(this.acId);
+                }
+
+         },
+            // 触发搜索按钮
+            handleSearch() {
+                this.$set(this.query, 'pageIndex', 1);
+                this.getData(this.acId);
+            },
         //新增
         handleAdd(){
             this.addVisible=true;
@@ -225,7 +243,8 @@ export default {
             request.fetchPost('/luck/add',{luckyNum:that.form.num,luckyRoundNum:that.form.roundNum,activityId:that.sel,type:that.radio=='0'?0:1 }).then(function (res) {
                 if(res.data.code==1){
                     that.addVisible=false
-                    that.getData()
+                     that.$set(that.query, 'pageIndex', 1);
+                    that.getData(that.acId)
                     alert('新增成功')
                 }else{
 
@@ -241,7 +260,8 @@ export default {
             request.fetchPost('/luck/delete',{luckyId:row.luckyId}).then(function (res) {
                 if(res.data.code==1)
                 {
-                     that.getData()
+                     that.$set(that.query, 'pageIndex', 1);
+                     that.getData(that.acId)
                      alert('删除成功')
                 }else {
                     alert('删除失败')
@@ -296,7 +316,8 @@ export default {
             request.fetchPost('/luck/update',{luckyId:that.dic.luckyId,luckyNum:that.form.num,activityId:that.sel,luckyRoundNum:roundNum,type:that.radio=='0'?0:1 }).then(function (res) {
                 if(res.data.code==1){
                     that.editVisible=false
-                    that.getData()
+                    that.$set(that.query, 'pageIndex', 1);
+                    that.getData(that.acId)
                     alert('修改成功')
                 }else{
 
@@ -309,7 +330,7 @@ export default {
         // 分页导航
         handlePageChange(val) {
             this.$set(this.query, 'pageIndex', val);
-            this.getData();
+            this.getData(this.acId);
         },
 
 

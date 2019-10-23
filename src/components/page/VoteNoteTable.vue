@@ -102,9 +102,9 @@ export default {
     methods: {
         // 获取 easy-mock 的模拟数据
         getData(aid) {
-            request.fetchPost('/vote/voteNote/select',{activityId:aid}).then((res)=>{
+            request.fetchPost('/vote/voteNote/select',{activityId:aid,page:this.query.pageIndex}).then((res)=>{
                 this.tableData = res.data.data[0]["data"]
-                this.pageTotal = this.tableData.length
+                this.pageTotal = res.data.data[0]['count']
                 console.log(res.data.data)
             }).catch((err=>{
                 console.log(err)
@@ -119,7 +119,8 @@ export default {
                 that.op=res.data.data[0]['data']
                if(that.op.length>0)
                {
-                   that.sel= that.op[0].activityId;
+                   that.$set(that.query, 'pageIndex', 1);
+                   that.sel = that.op[0].activityId;
                    that.getData(that.sel)
                }
 
@@ -131,7 +132,7 @@ export default {
             //活动选择的时候
          selectWay(e){
                 if(this.sel>0)
-                {
+                {     this.$set(this.query, 'pageIndex', 1);
                       this.getData(this.sel);
                 }
 
@@ -146,7 +147,7 @@ export default {
         // 分页导航
         handlePageChange(val) {
             this.$set(this.query, 'pageIndex', val);
-            this.getData();
+            this.getData(this.sel);
         },
 
 

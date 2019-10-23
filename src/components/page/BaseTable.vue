@@ -200,9 +200,9 @@ export default {
     methods: {
         // 获取 easy-mock 的模拟数据
         getData() {
-            request.fetchPost('/activity/select').then((res)=>{
+            request.fetchPost('/activity/select',{page:this.query.pageIndex}).then((res)=>{
                 this.tableData = res.data.data[0]["data"]
-                this.pageTotal = this.tableData.length
+                this.pageTotal = res.data.data[0]["count"]
                 console.log(this.tableData)
 
 
@@ -242,6 +242,7 @@ export default {
 
                       if(res.data.code==1)
                       {
+                          that.$set(that.query, 'pageIndex', 1);
                           that.getData()
                           that.addVisible=false
                           alert('新增成功')
@@ -251,7 +252,7 @@ export default {
                       }
 
                   }).catch(function (err) {
-                      that.getData()
+
                     alert('新增失败--')
                   })
 
@@ -277,6 +278,7 @@ export default {
 
                 }else
                 {
+                    that.$set(that.query, 'pageIndex', 1);
                     that.getData()
                  alert('删除成功');
                 }
@@ -344,7 +346,9 @@ export default {
                   request.fetchPost('/activity/update',{activityId:aid, activityName:nameA,status: status, codePhoto:res.data.message}).then(function (res) {
 
                       if (res.data.code==1)
-                      {     that.getData()
+                       {
+                           that.$set(that.query, 'pageIndex', 1);
+                           that.getData()
                            alert('修改成功')
                       }else {
 
@@ -366,6 +370,7 @@ export default {
 
                      if(res.data.code==1)
                      {
+                           that.$set(that.query, 'pageIndex', 1);
                            that.getData()
                            alert('修改成功')
                      }else {

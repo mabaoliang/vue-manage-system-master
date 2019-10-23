@@ -32,7 +32,7 @@
             >
                 <el-table-column type="selection" width="55" align="center"></el-table-column>
                 <el-table-column prop="id" label="ID" width="55" align="center">
-                    <template slot-scope="scope">{{scope.row.activityId}}</template>
+                    <template slot-scope="scope">{{scope.row.voteId}}</template>
                 </el-table-column>
 <!--                <el-table-column prop="name" label="用户名"></el-table-column>-->
                 <el-table-column label="投票标题">
@@ -233,9 +233,10 @@ export default {
     methods: {
         // 获取 easy-mock 的模拟数据
         getData(aid) {
-            request.fetchPost('/vote/select',{activityId:aid}).then((res)=>{
+            request.fetchPost('/vote/select',{activityId:aid,page:this.query.pageIndex}).then((res)=>{
+
                 this.tableData = res.data.data[0]["data"]
-                this.pageTotal = this.tableData.length
+                this.pageTotal = res.data.data[0]['count']
                 console.log(res.data.data)
             }).catch((err=>{
                 console.log(err)
@@ -247,11 +248,12 @@ export default {
              let that=this
              request.fetchPost('activity/select').then(function (res) {
 
-                that.op=res.data.data[0]['data']
+                 that.op=res.data.data[0]['data']
                   that.acArr=res.data.data[0]['data']
                if(that.acArr.length>0)
                {
                    that.acId= that.acArr[0].activityId;
+                   that.$set(that.query, 'pageIndex', 1);
                    that.getData(that.acId)
                }
 
@@ -263,7 +265,7 @@ export default {
             //活动选择的时候
          selectWay(e){
                 if(this.acId>0)
-                {
+                {     this.$set(this.query, 'pageIndex', 1);
                       this.getData(this.acId);
                 }
 
@@ -318,14 +320,13 @@ export default {
                 alert('请将数据填写完整')
                 return
             }
-            alert(nameA)
-            alert(aid)
-            alert(gid)
+
 
             request.fetchPost('/vote/add',{voteTitle:that.form.name,groupId:gid,activityId:that.sel,voteIs:that.radio=='false'?0:1 }).then(function (res) {
                 if(res.data.code==1){
                     that.addVisible=false
-                    that.getData()
+                    that.$set(this.query, 'pageIndex', 1);
+                    that.getData(that.acId)
                     alert('新增成功')
                 }else{
 
@@ -341,7 +342,8 @@ export default {
             request.fetchPost('/vote/delete',{groupId:row.groupId}).then(function (res) {
                 if(res.data.code==1)
                 {
-                     that.getData()
+                     that.$set(this.query, 'pageIndex', 1);
+                     that.getData(that.acId)
                      alert('删除成功')
                 }else {
                     alert('删除失败')
@@ -396,7 +398,8 @@ export default {
             request.fetchPost('/vote/update',{voteId:that.dic.voteId,voteTitle:that.form.name,activityId:that.sel,groupId:gid,voteIs:that.radio=='false'?0:1 }).then(function (res) {
                 if(res.data.code==1){
                     that.editVisible=false
-                    that.getData()
+                    that.$set(this.query, 'pageIndex', 1);
+                    that.getData(that.acId)
                     alert('修改成功')
                 }else{
 
@@ -409,7 +412,7 @@ export default {
         // 分页导航
         handlePageChange(val) {
             this.$set(this.query, 'pageIndex', val);
-            this.getData();
+            this.getData(this.acId);
         },
         //optionsAdd 选项窗口调用
         optionsAdd(index, row){

@@ -211,9 +211,9 @@
         methods: {
             // 获取 easy-mock 的模拟数据
             getData(aid) {
-                request.fetchPost('/gift/select',{activityId:aid}).then((res)=>{
+                request.fetchPost('/gift/select',{activityId:aid,page:this.query.pageIndex}).then((res)=>{
                     this.tableData = res.data.data[0]["data"]
-                    this.pageTotal = this.tableData.length
+                    this.pageTotal = res.data.data[0]["count"]
                     console.log(this.tableData)
                 }).catch((err=>{
                     console.log(err)
@@ -252,6 +252,7 @@
          selectWay(e){
                 if(this.acId>0)
                 {
+                      this.$set(this.query, 'pageIndex', 1);
                       this.getData(this.acId);
                 }
 
@@ -280,7 +281,8 @@
 
                         if(res.data.code==200)
                         {
-                            that.getData();
+                            that.$set(that.query, 'pageIndex', 1);
+                            that.getData(that.acId);
                             that.addVisible=false;
                             alert('新增成功')
                         }else
@@ -289,7 +291,7 @@
                         }
 
                     }).catch(function (err) {
-                        that.getData();
+
                         alert('新增失败--')
                     })
 
@@ -309,7 +311,8 @@
 
                     }else
                     {
-                        that.getData()
+                        that.$set(that.query, 'pageIndex', 1);
+                        that.getData(that.acId)
                         alert('删除成功');
                     }
 
@@ -380,7 +383,9 @@
                         request.fetchPost('/gift/update',{giftId:gid,giftNum:gum,giftName:nameA,activityId:aid,giftImg:res.data.message}).then(function (res) {
 
                             if (res.data.code==200)
-                            {     that.getData()
+                            {
+                                that.$set(that.query, 'pageIndex', 1);
+                                that.getData(that.acId)
                                 alert('修改成功')
                             }else {
 
@@ -400,7 +405,8 @@
                     request.fetchPost('/gift/update',{activityId:aid, giftName:nameA,giftId:gid, giftImg:that.dic.giftImg,giftNum:gum}).then(function (res) {
                         if(res.data.code==200)
                         {
-                            that.getData()
+                            that.$set(that.query, 'pageIndex', 1);
+                            that.getData(that.acId)
                             alert('修改成功')
                         }else {
                             alert('修改失败')
@@ -424,7 +430,7 @@
             // 分页导航
             handlePageChange(val) {
                 this.$set(this.query, 'pageIndex', val);
-                this.getData();
+                this.getData(this.acId);
             }
         }
     };
