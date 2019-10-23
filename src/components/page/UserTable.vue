@@ -15,9 +15,8 @@
                         class="handle-del mr10"
                         @click="delAllSelection"
                 >批量删除</el-button>
-                <el-select v-model="query.address" placeholder="地址" class="handle-select mr10">
-                    <el-option key="1" label="广东省" value="广东省"></el-option>
-                    <el-option key="2" label="湖南省" value="湖南省"></el-option>
+                 <el-select    @change="selectWay" v-model="acId" clearable placeholder='活动' class="handle-select mr10">
+                        <el-option v-for="item in acArr" :label="item.activityName" :value="item.activityId" :key="item.activityId"></el-option>
                 </el-select>
                 <el-input v-model="query.name" placeholder="用户名" class="handle-input mr10"></el-input>
                 <el-button type="primary" icon="el-icon-search" @click="handleSearch">搜索</el-button>
@@ -120,7 +119,7 @@
                     </el-select>
                 </el-form-item>
                 <el-form-item label="所属活动">
-                    <el-select v-model="sel" clearable placeholder="请选择">
+                    <el-select @change="selectWayB" v-model="sel" clearable placeholder="请选择">
                         <el-option v-for="item in activity" :label="item.activityName" :value="item.activityId" :key="item.activityId"></el-option>
                     </el-select>
                 </el-form-item>
@@ -164,13 +163,13 @@
                     <el-input v-model="form.phone"></el-input>
                 </el-form-item>
                 <el-form-item label="地址">
-                    <el-select v-model="form.address" placeholder="地址" class="handle-select mr10">
+                 <el-select v-model="form.address" placeholder="地址" class="handle-select mr10">
                         <el-option key="1" label="广东省" value="广东省"></el-option>
                         <el-option key="2" label="湖南省" value="湖南省"></el-option>
                     </el-select>
                 </el-form-item>
                 <el-form-item label="所属活动">
-                    <el-select v-model="sel" clearable placeholder="请选择">
+                    <el-select @change="selectWayA" v-model="sel" clearable placeholder="请选择">
                         <el-option v-for="item in activity" :label="item.activityName" :value="item.activityId" :key="item.activityId"></el-option>
                     </el-select>
                 </el-form-item>
@@ -236,28 +235,31 @@
                 idx: -1,
                 id: -1,
                 fileList:[],
-                url:'http://192.168.0.23:8085',
+                url:request.url,
                 params:null,
                 sel:0,
                 gel:0,
                 op:[{value:0,label:'默认'},
                     {value:1,label:'不默认'}
                 ],
+                acId:-1, //活动查询的ID
+                acArr:[], //活动下拉查询数组
                 activity:[],//活动列表
                 group:[],//群组列表
                 dic:{}  // 一条完整的数据
             };
         },
         created() {
-            this.getData();
+
             this.getActivity();
-            this.getGroup();
+            // this.getGroup();
         },
         methods: {
             // 获取 easy-mock 的模拟数据
-            getData() {
-                request.fetchPost('/user/select').then((res)=>{
+            getData(aid) {
+                request.fetchPost('/user/select',{activityId:aid}).then((res)=>{
                     this.tableData = res.data.data[0]["data"];
+                    this.pageTotal = this.tableData.length
                     console.log(this.tableData)
                 }).catch((err=>{
                     console.log(err)
@@ -273,6 +275,13 @@
                 request.fetchPost('/activity/select').then(function (res) {
 
                     that.activity=res.data.data[0]['data']
+                    that.acArr = res.data.data[0]['data']
+                    if(that.acArr.length>0)
+                    {
+
+                        that.acId = that.acArr[0].activityId
+                        that.getData(that.acId)
+                    }
                 }).catch(function (er){
 
 
@@ -281,7 +290,7 @@
             //获取群组
             getGroup(){
                 let that=this;
-                request.fetchPost('/group/select').then(function (res) {
+                request.fetchPost('/group/selectId',{activityId:that.sel}).then(function (res) {
 
                     that.group=res.data.data[0]['data']
                 }).catch(function (er){
@@ -338,10 +347,30 @@
                 })
 
             },
+
+            //活动选择的时候
+         selectWay(e){
+                if(this.acId>0)
+                {
+                      this.getData(this.acId);
+                }
+
+         },
+
+             // 编辑时的
+        selectWayA(e){
+             this.grl =-1;
+             this.getGroup(this.sel);
+        },
+        //新增时
+        selectWayB(e){
+                this.grl =-1;
+               this.getGroup(this.sel);
+        },
             // 触发搜索按钮
             handleSearch() {
                 this.$set(this.query, 'pageIndex', 1);
-                this.getData();
+                this.getData(this.acId);
             },
             // 删除操作
             handleDelete(index, row) {

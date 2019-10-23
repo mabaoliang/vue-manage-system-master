@@ -9,9 +9,8 @@
         </div>
         <div class="container">
             <div class="handle-box">
-                <el-select v-model="query.address" placeholder="地址" class="handle-select mr10">
-                    <el-option key="1" label="广东省" value="广东省"></el-option>
-                    <el-option key="2" label="湖南省" value="湖南省"></el-option>
+                <el-select    @change="selectWay" v-model="sel" clearable placeholder='活动' class="handle-select mr10">
+                        <el-option v-for="item in op" :label="item.activityName" :value="item.activityId" :key="item.activityId"></el-option>
                 </el-select>
                 <el-input v-model="query.name" placeholder="用户名" class="handle-input mr10"></el-input>
                 <el-button type="primary" icon="el-icon-search" @click="handleSearch">搜索</el-button>
@@ -82,30 +81,58 @@ export default {
             pageTotal: 0,
             idx: -1,
             id: -1,
+            sel:-1,
             fileList:[],
+            op:[],
         };
     },
     created() {
-        this.getData();
+        this.getActivity();
 
     },
     methods: {
         // 获取 easy-mock 的模拟数据
-        getData() {
-            request.fetchPost('/luck/luckyNote').then((res)=>{
+        getData(aid) {
+            request.fetchPost('/luck/luckyNote',{activityId:aid}).then((res)=>{
                 this.tableData = res.data.data[0]["data"]
+                this.pageTotal = this.tableData.length
                 console.log(res.data.data)
             }).catch((err=>{
                 console.log(err)
             }))
 
         },
+     //获取活动
+          getActivity(){
+             let that=this
+             request.fetchPost('activity/select').then(function (res) {
 
-        // 触发搜索按钮
-        handleSearch() {
-            this.$set(this.query, 'pageIndex', 1);
-            this.getData();
-        },
+                that.op=res.data.data[0]['data']
+               if(that.op.length>0)
+               {
+                   that.sel= that.op[0].activityId;
+                   that.getData(that.sel)
+               }
+
+          }).catch(function (er){
+
+
+          })
+         },
+            //活动选择的时候
+         selectWay(e){
+                if(this.sel>0)
+                {
+                      this.getData(this.sel);
+                }
+
+         },
+            // 触发搜索按钮
+            handleSearch() {
+                this.$set(this.query, 'pageIndex', 1);
+                this.getData(this.sel);
+            },
+
 
         // 分页导航
         handlePageChange(val) {
