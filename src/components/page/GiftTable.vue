@@ -226,16 +226,16 @@
             //新增礼品
             handleAdd(){
                 this.addVisible = true;
-                this.name = '';
+                this.form.name = '';
                 this.sel = -1;
-                this.num = 0
+                this.form.num = 0
             },
             //获取活动
           getActivity(){
              let that=this
              request.fetchPost('activity/select').then(function (res) {
 
-                  that.op=res.data.data[0]['data']
+                  that.activity=res.data.data[0]['data']
                   that.acArr=res.data.data[0]['data']
                if(that.acArr.length>0)
                {
@@ -345,7 +345,7 @@
             handleEdit(index, row) {
                 this.idx = index;
                 this.dic = row;
-                this.sel = row.status;
+                this.sel = row.activityId;
                 this.form.name = row.giftName;
                 this.form.num = row.giftNum;
                 this.form.activityName = row.activityName;
